@@ -59,4 +59,4 @@ On this machine (Node v25.9.0, 2026-10-17), `npm run bench` granted and transfer
 
 ## Limits
 
-The action and resource sets are fixed. Attribute rules are a TypeScript predicate, not a policy language. Relation checks are a linear scan of tuples, not a graph engine. The HMAC key is a string the caller supplies. There is no key store. A caller who can import the module can still not forge the symbol without going through `grant`, but a determined cast inside this package could. Do not treat the chain as a legal record.
+The action and resource sets are fixed. Attribute rules are a TypeScript predicate, not a policy language. Relation checks are a linear scan of tuples, not a graph engine. The HMAC key is a string the caller supplies. There is no key store. `events()` returns a frozen copy. Changing or shortening that copy does not change the log. `verify()` requires sequence numbers 1, 2, 3 with no gaps, then checks the hash and the HMAC. A caller who can import the module can still not forge the symbol without going through `grant`, but a determined cast inside this package could. Do not treat the chain as a legal record.

@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { AuditLog } from "../src/audit.js";
+import { AuditLog, chainIntact, type AuditEvent } from "../src/audit.js";
 import {
   defineGrants,
   grant,
@@ -124,7 +124,24 @@ describe("grants", () => {
     if (event === undefined) {
       throw new Error("expected an event");
     }
-    (event as { mac: string }).mac = "0";
-    expect(log.verify()).toBe(false);
+    expect(() => {
+      (event as { mac: string }).mac = "0";
+    }).toThrow(TypeError);
+    expect(log.verify()).toBe(true);
+    expect(() => {
+      (log.events() as AuditEvent[]).pop();
+    }).toThrow(TypeError);
+    expect(log.events()).toHaveLength(1);
+  });
+
+  it("rejects a broken sequence, hash, or mac on a copied chain", () => {
+    const log = new AuditLog(key);
+    const first = log.append({ at, action: "read", resource: "account", subject: "ada", decision: "allow" });
+    const second = log.append({ at, action: "read", resource: "account", subject: "ada", decision: "deny" });
+    expect(chainIntact([first, second], key)).toBe(true);
+    expect(chainIntact([first, { ...second, seq: 3 }], key)).toBe(false);
+    expect(chainIntact([{ ...first, prev: "OTHER" }], key)).toBe(false);
+    expect(chainIntact([{ ...first, hash: "00" }], key)).toBe(false);
+    expect(chainIntact([{ ...first, mac: "00" }], key)).toBe(false);
   });
 });

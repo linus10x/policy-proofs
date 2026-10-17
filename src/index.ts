@@ -1,4 +1,4 @@
-export { AuditLog, type AuditEvent, type AuditInput, type Decision } from "./audit.js";
+export { AuditLog, chainIntact, type AuditEvent, type AuditInput, type Decision } from "./audit.js";
 export {
   actions,
   assertProof,

@@ -40,20 +40,27 @@ export class AuditLog {
   }
 
   events(): readonly AuditEvent[] {
-    return this.#events;
+    return Object.freeze(this.#events.map((event) => Object.freeze({ ...event })));
   }
 
   verify(): boolean {
-    let prev = "GENESIS";
-    for (const event of this.#events) {
-      const body = `${event.seq.toString()}|${event.at}|${event.action}|${event.resource}|${event.subject}|${event.decision}|${prev}`;
-      const hash = createHash("sha256").update(body).digest("hex");
-      const mac = createHmac("sha256", this.#key).update(hash).digest("hex");
-      if (event.prev !== prev || event.hash !== hash || event.mac !== mac) {
-        return false;
-      }
-      prev = event.hash;
-    }
-    return true;
+    return chainIntact(this.#events, this.#key);
   }
+}
+
+export function chainIntact(events: readonly AuditEvent[], key: string): boolean {
+  let prev = "GENESIS";
+  for (const [index, event] of events.entries()) {
+    if (event.seq !== index + 1) {
+      return false;
+    }
+    const body = `${event.seq.toString()}|${event.at}|${event.action}|${event.resource}|${event.subject}|${event.decision}|${prev}`;
+    const hash = createHash("sha256").update(body).digest("hex");
+    const mac = createHmac("sha256", key).update(hash).digest("hex");
+    if (event.prev !== prev || event.hash !== hash || event.mac !== mac) {
+      return false;
+    }
+    prev = event.hash;
+  }
+  return true;
 }
